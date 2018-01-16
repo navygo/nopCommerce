@@ -85,6 +85,9 @@ namespace Nop.Core.Configuration
         /// </summary>
         public bool ClearPluginShadowDirectoryOnStartup { get; set; }
 
+        //Gets or sets a value indicating whether to copy "locked" assemblies from /Plugins/bin directory to temporary subdirectories on application startup
+        public bool CopyLockedPluginAssembilesToSubdirectoriesOnStartup { get; set; }
+
         /// <summary>
         /// Gets or sets a value indicating whether to load an assembly into the load-from context, bypassing some security checks.
         /// </summary>

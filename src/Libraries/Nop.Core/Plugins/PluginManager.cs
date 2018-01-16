@@ -20,11 +20,19 @@ namespace Nop.Core.Plugins
     /// </summary>
     public class PluginManager
     {
+        #region Constants
+
+        private const string RESERVE_SHADOW_COPY_FOLDER_NAME = "reserve_bin_";
+        private const string RESERVE_SHADOW_COPY_FOLDER_NAME_PATTERN = "reserve_bin_*";
+
+        #endregion
+
         #region Fields
 
         private static readonly ReaderWriterLockSlim Locker = new ReaderWriterLockSlim();
         private static DirectoryInfo _shadowCopyFolder;
         private static readonly List<string> BaseAppLibraries;
+        private static DirectoryInfo _reserveShadowCopyFolder;
 
         #endregion
 
@@ -101,7 +109,7 @@ namespace Nop.Core.Plugins
                 var pluginSystemNames = new List<string>();
                 using (var reader = new StringReader(File.ReadAllText(filePath)))
                 {
-                    var pluginName = string.Empty;
+                    string pluginName;
                     while ((pluginName = reader.ReadLine()) != null)
                     {
                         if (!string.IsNullOrWhiteSpace(pluginName))
@@ -186,20 +194,23 @@ namespace Nop.Core.Plugins
         /// <param name="plug">Plugin file info</param>
         /// <param name="applicationPartManager">Application part manager</param>
         /// <param name="config">Config</param>
+        /// <param name="shadowCopyPath">Shadow copy path</param>
         /// <returns>Assembly</returns>
-        private static Assembly PerformFileDeploy(FileInfo plug, ApplicationPartManager applicationPartManager, NopConfig config)
+        private static Assembly PerformFileDeploy(FileInfo plug, ApplicationPartManager applicationPartManager, NopConfig config, string shadowCopyPath="")
         {
-            if (plug.Directory == null || plug.Directory.Parent == null)
-                throw new InvalidOperationException("The plugin directory for the " + plug.Name + " file exists in a folder outside of the allowed nopCommerce folder hierarchy");
+            if (plug.Directory?.Parent == null)
+                throw new InvalidOperationException($"The plugin directory for the {plug.Name} file exists in a folder outside of the allowed nopCommerce folder hierarchy");
 
-            //but in order to avoid possible issues we still copy libraries into ~/Plugins/bin/ directory
-            var shadowCopyPlugFolder = Directory.CreateDirectory(_shadowCopyFolder.FullName);
+            //in order to avoid possible issues we still copy libraries into ~/Plugins/bin/ directory
+            if (string.IsNullOrEmpty(shadowCopyPath))
+                shadowCopyPath = _shadowCopyFolder.FullName;
+
+            var shadowCopyPlugFolder = Directory.CreateDirectory(shadowCopyPath);
             var shadowCopiedPlug = ShadowCopyFile(plug, shadowCopyPlugFolder);
-
 
             //we can now register the plugin definition
             var assemblyName = AssemblyName.GetAssemblyName(shadowCopiedPlug.FullName);
-            Assembly shadowCopiedAssembly;
+            Assembly shadowCopiedAssembly = null;
             try
             {
                 shadowCopiedAssembly = Assembly.Load(assemblyName);
@@ -208,20 +219,32 @@ namespace Nop.Core.Plugins
             {
                 if (config.UseUnsafeLoadAssembly)
                 {
-                    //if an application has been copied from the web, it is flagged by Windows as being a web application,
-                    //even if it resides on the local computer.You can change that designation by changing the file properties,
-                    //or you can use the<loadFromRemoteSources> element to grant the assembly full trust.As an alternative,
-                    //you can use the UnsafeLoadFrom method to load a local assembly that the operating system has flagged as
-                    //having been loaded from the web.
-                    //see http://go.microsoft.com/fwlink/?LinkId=155569 for more information.
-                    shadowCopiedAssembly = Assembly.UnsafeLoadFrom(shadowCopiedPlug.FullName);
+                    try
+                    {
+                        //if an application has been copied from the web, it is flagged by Windows as being a web application,
+                        //even if it resides on the local computer.You can change that designation by changing the file properties,
+                        //or you can use the<loadFromRemoteSources> element to grant the assembly full trust.As an alternative,
+                        //you can use the UnsafeLoadFrom method to load a local assembly that the operating system has flagged as
+                        //having been loaded from the web.
+                        //see http://go.microsoft.com/fwlink/?LinkId=155569 for more information.
+                        shadowCopiedAssembly = Assembly.UnsafeLoadFrom(shadowCopiedPlug.FullName);
+                    }
+                    catch(FileLoadException)
+                    {
+                        if (!config.CopyLockedPluginAssembilesToSubdirectoriesOnStartup || !shadowCopyPath.Equals(_shadowCopyFolder.FullName))
+                            throw;
+                    }
                 }
                 else
                 {
-                    throw;
+                    if(!config.CopyLockedPluginAssembilesToSubdirectoriesOnStartup || !shadowCopyPath.Equals(_shadowCopyFolder.FullName))
+                        throw;
                 }
             }
-           
+            
+            if (shadowCopiedAssembly == null)
+                return PerformFileDeploy(plug, applicationPartManager, config, _reserveShadowCopyFolder.FullName);
+
             Debug.WriteLine("Adding to ApplicationParts: '{0}'", shadowCopiedAssembly.FullName);
             applicationPartManager.ApplicationParts.Add(new AssemblyPart(shadowCopiedAssembly));
 
@@ -325,6 +348,7 @@ namespace Nop.Core.Plugins
                 // prevent app from starting altogether
                 var pluginFolder = new DirectoryInfo(CommonHelper.MapPath(PluginsPath));
                 _shadowCopyFolder = new DirectoryInfo(CommonHelper.MapPath(ShadowCopyPath));
+                _reserveShadowCopyFolder = new DirectoryInfo(Path.Combine(CommonHelper.MapPath(ShadowCopyPath), $"{RESERVE_SHADOW_COPY_FOLDER_NAME}{DateTime.Now.ToFileTimeUtc()}"));
 
                 var referencedPlugins = new List<PluginDescriptor>();
                 var incompatiblePlugins = new List<string>();
@@ -361,6 +385,19 @@ namespace Nop.Core.Plugins
                             catch (Exception exc)
                             {
                                 Debug.WriteLine("Error deleting file " + f.Name + ". Exception: " + exc);
+                            }
+                        }
+
+                        //delete all reserve folders
+                        foreach (var directory in _shadowCopyFolder.GetDirectories(RESERVE_SHADOW_COPY_FOLDER_NAME_PATTERN, SearchOption.TopDirectoryOnly))
+                        {
+                            try
+                            {
+                                CommonHelper.DeleteDirectory(directory.FullName);
+                            }
+                            catch
+                            {
+                                //do nothing
                             }
                         }
                     }
