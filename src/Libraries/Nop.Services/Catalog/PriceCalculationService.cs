@@ -571,7 +571,7 @@ namespace Nop.Services.Catalog
                 {
                     foreach (var attributeValue in attributeValues)
                     {
-                        attributesTotalPrice += GetProductAttributeValuePriceAdjustment(attributeValue, product.CustomerEntersPrice ? (decimal?)customerEnteredPrice : null);
+                        attributesTotalPrice += GetProductAttributeValuePriceAdjustment(attributeValue, customer, product.CustomerEntersPrice ? (decimal?)customerEnteredPrice : null);
                     }
                 }
 
@@ -734,13 +734,7 @@ namespace Nop.Services.Catalog
             return cost;
         }
 
-        /// <summary>
-        /// Get a price adjustment of a product attribute value
-        /// </summary>
-        /// <param name="value">Product attribute value</param>
-        /// <param name="productPrice">Product price (null for using the base product price)</param>
-        /// <returns>Price adjustment</returns>
-        public virtual decimal GetProductAttributeValuePriceAdjustment(ProductAttributeValue value, decimal? productPrice = null)
+        public virtual decimal GetProductAttributeValuePriceAdjustment(ProductAttributeValue value, Customer customer, decimal? productPrice = null)
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
@@ -752,10 +746,10 @@ namespace Nop.Services.Catalog
                 case AttributeValueType.Simple:
                     {
                         //simple attribute
-                        if (value.PriceAdjustmentPercentage)
+                        if (value.PriceAdjustmentUsePercentage)
                         {
                             if (!productPrice.HasValue)
-                                productPrice = value.ProductAttributeMapping?.Product.Price ?? 0;
+                                productPrice = GetFinalPrice(value.ProductAttributeMapping.Product, customer);
 
                             adjustment = (decimal) ((float) productPrice * (float) value.PriceAdjustment / 100f);
                         }

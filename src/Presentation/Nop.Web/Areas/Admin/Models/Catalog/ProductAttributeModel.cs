@@ -66,8 +66,8 @@ namespace Nop.Web.Areas.Admin.Models.Catalog
         //used only on the values list page
         public string PriceAdjustmentStr { get; set; }
 
-        [NopResourceDisplayName("Admin.Catalog.Attributes.ProductAttributes.PredefinedValues.Fields.PriceAdjustmentPercentage")]
-        public bool PriceAdjustmentPercentage { get; set; }
+        [NopResourceDisplayName("Admin.Catalog.Attributes.ProductAttributes.PredefinedValues.Fields.PriceAdjustmentUsePercentage")]
+        public bool PriceAdjustmentUsePercentage { get; set; }
 
         [NopResourceDisplayName("Admin.Catalog.Attributes.ProductAttributes.PredefinedValues.Fields.WeightAdjustment")]
         public decimal WeightAdjustment { get; set; }

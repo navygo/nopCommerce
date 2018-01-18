@@ -25,7 +25,7 @@ namespace Nop.Core.Domain.Catalog
         /// <summary>
         /// Gets or sets a value indicating whether to "price adjustment" is specified as percentage
         /// </summary>
-        public bool PriceAdjustmentPercentage { get; set; }
+        public bool PriceAdjustmentUsePercentage { get; set; }
 
         /// <summary>
         /// Gets or sets the weight adjustment

@@ -293,7 +293,7 @@ namespace Nop.Web.Models.Catalog
 
             public string PriceAdjustment { get; set; }
             
-            public bool PriceAdjustmentPercentage { get; set; }
+            public bool PriceAdjustmentUsePercentage { get; set; }
 
             public decimal PriceAdjustmentValue { get; set; }
 

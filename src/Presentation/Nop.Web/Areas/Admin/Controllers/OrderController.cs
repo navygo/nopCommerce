@@ -921,7 +921,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                     {
                         //price adjustment
                         var priceAdjustment = _taxService.GetProductPrice(product,
-                            _priceCalculationService.GetProductAttributeValuePriceAdjustment(attributeValue), out taxRate);
+                            _priceCalculationService.GetProductAttributeValuePriceAdjustment(attributeValue, order.Customer), out taxRate);
 
                         attributeModel.Values.Add(new OrderModel.AddOrderProductModel.ProductAttributeValueModel
                         {

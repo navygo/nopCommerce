@@ -557,7 +557,7 @@ namespace Nop.Services.ExportImport
             var colorSquaresRgb = productAttributeManager.GetProperty("ColorSquaresRgb").StringValue;
             var imageSquaresPictureId = productAttributeManager.GetProperty("ImageSquaresPictureId").IntValue;
             var priceAdjustment = productAttributeManager.GetProperty("PriceAdjustment").DecimalValue;
-            var priceAdjustmentPercentage = productAttributeManager.GetProperty("PriceAdjustmentPercentage").BooleanValue;
+            var PriceAdjustmentUsePercentage = productAttributeManager.GetProperty("PriceAdjustmentUsePercentage").BooleanValue;
             var weightAdjustment = productAttributeManager.GetProperty("WeightAdjustment").DecimalValue;
             var cost = productAttributeManager.GetProperty("Cost").DecimalValue;
             var customerEntersQty = productAttributeManager.GetProperty("CustomerEntersQty").BooleanValue;
@@ -618,7 +618,7 @@ namespace Nop.Services.ExportImport
                     AssociatedProductId = associatedProductId,
                     Name = valueName,
                     PriceAdjustment = priceAdjustment,
-                    PriceAdjustmentPercentage = priceAdjustmentPercentage,
+                    PriceAdjustmentUsePercentage = PriceAdjustmentUsePercentage,
                     WeightAdjustment = weightAdjustment,
                     Cost = cost,
                     IsPreSelected = isPreSelected,
@@ -640,7 +640,7 @@ namespace Nop.Services.ExportImport
                 pav.ColorSquaresRgb = colorSquaresRgb;
                 pav.ImageSquaresPictureId = imageSquaresPictureId;
                 pav.PriceAdjustment = priceAdjustment;
-                pav.PriceAdjustmentPercentage = priceAdjustmentPercentage;
+                pav.PriceAdjustmentUsePercentage = PriceAdjustmentUsePercentage;
                 pav.WeightAdjustment = weightAdjustment;
                 pav.Cost = cost;
                 pav.CustomerEntersQty = customerEntersQty;
