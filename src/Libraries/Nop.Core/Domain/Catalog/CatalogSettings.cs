@@ -149,6 +149,11 @@ namespace Nop.Core.Domain.Catalog
         public int ProductReviewsPageSizeOnAccountPage { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the product reviews must be sort by created date as ascending
+        /// </summary>
+        public bool ProductReviewsSortByCreatedDateAscending { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether product 'Email a friend' feature is enabled
         /// </summary>
         public bool EmailAFriendEnabled { get; set; }
