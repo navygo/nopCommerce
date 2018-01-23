@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nop.Web.Areas.Admin.Models.ShoppingCart;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Orders;
+using Nop.Services;
 using Nop.Services.Catalog;
 using Nop.Services.Customers;
 using Nop.Services.Helpers;
@@ -69,18 +70,48 @@ namespace Nop.Web.Areas.Admin.Controllers
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageCurrentCarts))
                 return AccessDeniedView();
 
-            return View();
+            return View(new ShoppingCartTypeModel
+            {
+                ShoppingCartType = ShoppingCartType.ShoppingCart,
+                AvailableShoppingCartTypes = ShoppingCartType.ShoppingCart.ToSelectList()
+            });
         }
 
+        //[HttpPost]
+        //public virtual IActionResult CurrentCarts(DataSourceRequest command)
+        //{
+        //    if (!_permissionService.Authorize(StandardPermissionProvider.ManageCurrentCarts))
+        //        return AccessDeniedKendoGridJson();
+
+        //    var customers = _customerService.GetAllCustomers(
+        //        loadOnlyWithShoppingCart: true,
+        //        sct: ShoppingCartType.ShoppingCart,
+        //        pageIndex: command.Page - 1,
+        //        pageSize: command.PageSize);
+
+        //    var gridModel = new DataSourceResult
+        //    {
+        //        Data = customers.Select(x => new ShoppingCartModel
+        //        {
+        //            CustomerId = x.Id,
+        //            CustomerEmail = x.IsRegistered() ? x.Email : _localizationService.GetResource("Admin.Customers.Guest"),
+        //            TotalItems = x.ShoppingCartItems.Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart).ToList().GetTotalProducts()
+        //        }),
+        //        Total = customers.TotalCount
+        //    };
+
+        //    return Json(gridModel);
+        //}
+
         [HttpPost]
-        public virtual IActionResult CurrentCarts(DataSourceRequest command)
+        public virtual IActionResult CurrentCarts(DataSourceRequest command, ShoppingCartTypeModel model)
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageCurrentCarts))
                 return AccessDeniedKendoGridJson();
 
             var customers = _customerService.GetAllCustomers(
                 loadOnlyWithShoppingCart: true,
-                sct: ShoppingCartType.ShoppingCart,
+                sct: model.ShoppingCartType,
                 pageIndex: command.Page - 1,
                 pageSize: command.PageSize);
 
