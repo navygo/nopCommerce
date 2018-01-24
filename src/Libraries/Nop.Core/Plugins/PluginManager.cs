@@ -201,6 +201,9 @@ namespace Nop.Core.Plugins
             if (plug.Directory?.Parent == null)
                 throw new InvalidOperationException($"The plugin directory for the {plug.Name} file exists in a folder outside of the allowed nopCommerce folder hierarchy");
 
+            if (!config.UsePluginsShadowCopy)
+                return RegisterPluginDefinition(config, applicationPartManager, plug);
+
             //in order to avoid possible issues we still copy libraries into ~/Plugins/bin/ directory
             if (string.IsNullOrEmpty(shadowCopyPath))
                 shadowCopyPath = _shadowCopyFolder.FullName;
@@ -208,47 +211,59 @@ namespace Nop.Core.Plugins
             var shadowCopyPlugFolder = Directory.CreateDirectory(shadowCopyPath);
             var shadowCopiedPlug = ShadowCopyFile(plug, shadowCopyPlugFolder);
 
-            //we can now register the plugin definition
-            var assemblyName = AssemblyName.GetAssemblyName(shadowCopiedPlug.FullName);
             Assembly shadowCopiedAssembly = null;
+
             try
             {
-                shadowCopiedAssembly = Assembly.Load(assemblyName);
+                shadowCopiedAssembly = RegisterPluginDefinition(config, applicationPartManager, shadowCopiedPlug);
+            }
+            catch (FileLoadException)
+            {
+                if (!config.CopyLockedPluginAssembilesToSubdirectoriesOnStartup || !shadowCopyPath.Equals(_shadowCopyFolder.FullName))
+                    throw;
+            }
+
+            return shadowCopiedAssembly ?? PerformFileDeploy(plug, applicationPartManager, config, _reserveShadowCopyFolder.FullName);
+        }
+
+        /// <summary>
+        /// Register the plugin definition
+        /// </summary>
+        /// <param name="config">Config</param>
+        /// <param name="applicationPartManager">Application part manager</param>
+        /// <param name="plug">Plugin file info</param>
+        /// <returns></returns>
+        private static Assembly RegisterPluginDefinition(NopConfig config, ApplicationPartManager applicationPartManager, FileInfo plug)
+        {
+            //we can now register the plugin definition
+            var assemblyName = AssemblyName.GetAssemblyName(plug.FullName);
+            Assembly pluginAssembly;
+            try
+            {
+                pluginAssembly = Assembly.Load(assemblyName);
             }
             catch (FileLoadException)
             {
                 if (config.UseUnsafeLoadAssembly)
                 {
-                    try
-                    {
-                        //if an application has been copied from the web, it is flagged by Windows as being a web application,
-                        //even if it resides on the local computer.You can change that designation by changing the file properties,
-                        //or you can use the<loadFromRemoteSources> element to grant the assembly full trust.As an alternative,
-                        //you can use the UnsafeLoadFrom method to load a local assembly that the operating system has flagged as
-                        //having been loaded from the web.
-                        //see http://go.microsoft.com/fwlink/?LinkId=155569 for more information.
-                        shadowCopiedAssembly = Assembly.UnsafeLoadFrom(shadowCopiedPlug.FullName);
-                    }
-                    catch(FileLoadException)
-                    {
-                        if (!config.CopyLockedPluginAssembilesToSubdirectoriesOnStartup || !shadowCopyPath.Equals(_shadowCopyFolder.FullName))
-                            throw;
-                    }
+                    //if an application has been copied from the web, it is flagged by Windows as being a web application,
+                    //even if it resides on the local computer.You can change that designation by changing the file properties,
+                    //or you can use the<loadFromRemoteSources> element to grant the assembly full trust.As an alternative,
+                    //you can use the UnsafeLoadFrom method to load a local assembly that the operating system has flagged as
+                    //having been loaded from the web.
+                    //see http://go.microsoft.com/fwlink/?LinkId=155569 for more information.
+                    pluginAssembly = Assembly.UnsafeLoadFrom(plug.FullName);
                 }
                 else
                 {
-                    if(!config.CopyLockedPluginAssembilesToSubdirectoriesOnStartup || !shadowCopyPath.Equals(_shadowCopyFolder.FullName))
-                        throw;
+                    throw;
                 }
             }
-            
-            if (shadowCopiedAssembly == null)
-                return PerformFileDeploy(plug, applicationPartManager, config, _reserveShadowCopyFolder.FullName);
 
-            Debug.WriteLine("Adding to ApplicationParts: '{0}'", shadowCopiedAssembly.FullName);
-            applicationPartManager.ApplicationParts.Add(new AssemblyPart(shadowCopiedAssembly));
+            Debug.WriteLine("Adding to ApplicationParts: '{0}'", pluginAssembly.FullName);
+            applicationPartManager.ApplicationParts.Add(new AssemblyPart(pluginAssembly));
 
-            return shadowCopiedAssembly;
+            return pluginAssembly;
         }
 
         /// <summary>
