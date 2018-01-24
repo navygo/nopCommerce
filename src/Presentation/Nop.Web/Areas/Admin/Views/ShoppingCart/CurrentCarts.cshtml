@@ -17,7 +17,7 @@
 <nop-antiforgery-token />
 <div class="content-header clearfix">
     <h1 class="pull-left">
-        @T("Admin.CurrentCarts")
+        @T("Admin.CurrentCarts.CartsAndWishlists")
     </h1>
     <div class="pull-right">
         &nbsp;
@@ -28,7 +28,6 @@
 <div class="content">
     <div class="form-horizontal">
         <div class="panel-group">
-            
             <div class="panel panel-default">
                 <div class="panel-body">
                     <div class="row">
@@ -45,7 +44,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="panel panel-default">
                 <div class="panel-body">
                     <div id="carts-grid"></div>
@@ -112,7 +110,7 @@
                                                 e.data.CustomerId,
                                             type: "POST",
                                             dataType: "json",
-                                            data: addAntiForgeryToken
+                                            data: additionalData
                                         },
                                         destroy: {
                                             url: "@Html.Raw(Url.Action("DeleteItem", "ShoppingCart"))",

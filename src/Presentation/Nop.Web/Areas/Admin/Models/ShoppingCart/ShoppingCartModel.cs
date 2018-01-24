@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core.Domain.Orders;
 using Nop.Web.Framework.Mvc.ModelBinding;
 using Nop.Web.Framework.Mvc.Models;
@@ -18,8 +19,13 @@ namespace Nop.Web.Areas.Admin.Models.ShoppingCart
 
     public partial class ShoppingCartTypeModel : BaseNopModel
     {
-        [NopResourceDisplayName("Admin.CurrentCarts.ShoppingCartType")]
+        public ShoppingCartTypeModel()
+        {
+            AvailableShoppingCartTypes = new List<SelectListItem>();
+        }
+
+        [NopResourceDisplayName("Admin.ShoppingCartType.ShoppingCartType")]
         public ShoppingCartType ShoppingCartType { get; set; }
-        public SelectList AvailableShoppingCartTypes { get; set; }
+        public IList<SelectListItem> AvailableShoppingCartTypes { get; set; }
     }
 }
